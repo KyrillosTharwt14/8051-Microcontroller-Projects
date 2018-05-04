@@ -1,0 +1,1 @@
+"D:\Task_2\Function generator\DAC.obj"  TO "D:\Task_2\Function generator\function generator" RS(256) PL(68) PW(78) 

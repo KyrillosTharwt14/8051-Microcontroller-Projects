@@ -1,0 +1,469 @@
+//-----------------------------------------------------------------------------
+// F02x_DACs_SineCosine.c
+//-----------------------------------------------------------------------------
+// Copyright 2006 Silicon Laboratories, Inc.
+// http://www.silabs.com
+//
+// Program Description:
+//
+// This program outputs sine and cosine waveforms using the hardware DACs
+// on the C8051F020 microcontroller.  The waveforms are output on pins DAC0 
+// and DAC1.
+//
+// The output of the DAC is updated upon a Timer4 interrupt.  The Timer4 ISR
+// then calculates the output of the DACs for the next interrupt. 
+//
+// The frequency of the output waveforms is set by the #define <FREQUENCY>.
+//
+//
+// How To Test: 
+//
+// 1) Download the code to an C8051F020 Development Board
+// 2) Ensure that pins 1 and 2 on the J22 header on the development board
+//    are shorted together.  This connects VREF to decoupling capacitors.
+// 3) Connect two oscillscope probes to pins DAC0 and DAC1.  These pins are 
+//    available on both the J11 (pins 3 and 4 respectively) and J20 headers
+//    (pin 3 and 4 respectively).
+// 4) Confirm that there are two waveforms with the output of DAC1 leading 
+//    the output DAC0 by 90 degrees.  The frequency of both waveforms should
+//    be close to frequency defined by <FREQUENCY>
+//
+// FID:            02X000014
+// Target:         C8051F02x
+// Tool chain:     Keil C51 7.50 / Keil EVAL C51
+//                 Silicon Laboratories IDE version 2.71
+// Command Line:   Default
+//
+// Release 1.0
+//    -Initial Revision (GP)
+//    -10 JUL 2006
+//
+
+//-----------------------------------------------------------------------------
+// Includes
+//-----------------------------------------------------------------------------
+
+#include <c8051f020.h>                 // SFR declarations
+#include <stdio.h> 
+#include <string.h> 
+#include <ctype.h>
+#include <stdlib.h>
+//-----------------------------------------------------------------------------
+// 16-bit SFR Definitions for 'F02x
+//-----------------------------------------------------------------------------
+
+sfr16 RCAP4    = 0xE4;                 // Timer4 capture/reload
+sfr16 TMR4     = 0xF4;                 // Timer4
+sfr16 DAC0     = 0xd2;                 // DAC0 data
+sfr16 DAC1     = 0xd5;                 // DAC1 data
+
+//-----------------------------------------------------------------------------
+// Global Constants
+//-----------------------------------------------------------------------------
+
+#define SYSCLK          22118400       // Internal oscillator frequency in Hz
+
+#define SAMPLE_RATE_DAC 100000L        // DAC sampling rate in Hz
+#define PHASE_PRECISION 65536          // range of phase accumulator
+
+
+                                       
+// <PHASE_ADD> is the change in phase between DAC samples; It is used in 
+// the set_DACs routine.
+int frequency = 10 ;
+int flag = 0 ;
+int temp_amp = 10 ;
+
+#define FREQUENCY       1000        // frequency of output in Hz,defaults to 1000 Hz
+unsigned int phase_add = FREQUENCY * PHASE_PRECISION / SAMPLE_RATE_DAC;
+unsigned int amplitude = 100 * 655;       // 655 is a scaling factor // see the Timer 4 ISR Waveform output_waveform = OFF;
+
+
+int code SINE_TABLE[] = {
+
+   0x0000, 0x0324, 0x0647, 0x096a, 0x0c8b, 0x0fab, 0x12c8, 0x15e2, 
+   0x18f8, 0x1c0b, 0x1f19, 0x2223, 0x2528, 0x2826, 0x2b1f, 0x2e11,
+   0x30fb, 0x33de, 0x36ba, 0x398c, 0x3c56, 0x3f17, 0x41ce, 0x447a, 
+   0x471c, 0x49b4, 0x4c3f, 0x4ebf, 0x5133, 0x539b, 0x55f5, 0x5842,
+   0x5a82, 0x5cb4, 0x5ed7, 0x60ec, 0x62f2, 0x64e8, 0x66cf, 0x68a6, 
+   0x6a6d, 0x6c24, 0x6dca, 0x6f5f, 0x70e2, 0x7255, 0x73b5, 0x7504,
+   0x7641, 0x776c, 0x7884, 0x798a, 0x7a7d, 0x7b5d, 0x7c29, 0x7ce3, 
+   0x7d8a, 0x7e1d, 0x7e9d, 0x7f09, 0x7f62, 0x7fa7, 0x7fd8, 0x7ff6,
+   0x7fff, 0x7ff6, 0x7fd8, 0x7fa7, 0x7f62, 0x7f09, 0x7e9d, 0x7e1d, 
+   0x7d8a, 0x7ce3, 0x7c29, 0x7b5d, 0x7a7d, 0x798a, 0x7884, 0x776c,
+   0x7641, 0x7504, 0x73b5, 0x7255, 0x70e2, 0x6f5f, 0x6dca, 0x6c24, 
+   0x6a6d, 0x68a6, 0x66cf, 0x64e8, 0x62f2, 0x60ec, 0x5ed7, 0x5cb4,
+   0x5a82, 0x5842, 0x55f5, 0x539b, 0x5133, 0x4ebf, 0x4c3f, 0x49b4, 
+   0x471c, 0x447a, 0x41ce, 0x3f17, 0x3c56, 0x398c, 0x36ba, 0x33de,
+   0x30fb, 0x2e11, 0x2b1f, 0x2826, 0x2528, 0x2223, 0x1f19, 0x1c0b, 
+   0x18f8, 0x15e2, 0x12c8, 0x0fab, 0x0c8b, 0x096a, 0x0647, 0x0324,
+};
+int code ECG[] = {
+     0xA350,0xA36A,0xC385,0xC39E,0xC3BE,0xC3D4,0xC3EA,0xC409,
+   0xD42E,0xC43A,0xC439,0xC473,0xC48E,0xC4E8,0xC4D3,0xC4AD,
+   0xD4F8,0xC18E,0xCC24,0xCFBA,0xD350,0xD6E6,0xDA7C,0xDE12,
+   0xA1A8,0xA13E,0xE8D5,0xEC6B,0xF001,0xF397,0xF72D,0xFAC3,
+   0xEA59,0xA01EF,0x10585,0x1021A,0xFEBE,0xFB54,0xF7AE,
+   0xA488,0xE0123,0xEDBD,0xED57,0xE6F1,0xE38C,0xA026,0xDAC0,
+   0xE95A,0xD5F5,0xD28F,0xCA29,0xCBC3,0xC85D,0xC4F8,0xC4E5,
+   0xA4D3,0xA4C0,0xC4AE,0xC49C,0xC489,0xC477,0xC464,0xC452,
+   0xC43F,0xE42D,0xC41B,0xC408,0xC3F6,0xC3E3,0xC3D1,0xC3BF,
+   0xC3AC,0xE39A,0xC387,0xC375,0xC362,0xC350,0xB9EF,0xB08E,
+   0xE72D,0xADCB,0x946A,0x8B09,0x9E64,0xB1BE,0xC518,0xD873,
+   0xEBCD,0xAF27,0x11282,0x125DC,0x13937,0x14C91,0x15FEB,
+   0xA7346,0xA86A0,0x16AFF,0x14F5E,0x133BD,0x1181C,0xFC7B,
+   0xE0DA,0xC539,0xA998,0x8DF7,0x7256,0x56B5,0x3B14,0x1F73
+};
+int code bradyECG[] = 
+{
+    0x30,0x30 ,0x30,0x30,0x30 ,0x30,0x30,0x30 ,0x30,0x30,0x30,0x30,0x30,0x30 ,0x30,0x30,
+    0x30 ,0x30,0x30,0x30,0x30 ,0x30,0x30 ,0x30,0x30,0x30 ,0x30,0x30,0x30,0x30,0x30,0x30,
+    0x30 ,0x30 ,0x30,0x30,0x30 ,0x30 ,0x30 ,0x30 ,0x30 ,0x30 ,0x30 ,0x30,0x30,0x30,0x30,
+	0x30,0x30 ,0x30,0x30,0x30,0x30,0x30 ,0x30,0x30,0x30 ,0x30 ,0x30,0x30,0x30,0x30,0x30,
+	0x30,0x30 ,0x30 ,0x30,0x30,0x30,0x30 ,0x30,0x30,0x30 ,0x30,0x30,0x30,0x30,0x30,0x30
+};
+int code tachyECG[] = 
+{
+   0x30,0x31 ,0x32, 0x34, 0x36 ,0x37, 0x3a, 0x3c, 0x3f,0x42 ,0x44 ,0x45,
+   0x57 ,0x49, 0x4b, 0x4c,0x4e,0x4f,0x50,0x51 ,0x51 ,0x51 ,0x51 ,0x50,
+   0x50,0x4f,0x4e,0x4e,0x4d,0x4c,0x4c,0x46,0x42,0x3e,0x3c,0x3a,0x3a,
+   0x3a,0x39,0x32,0x32,0x32,0x32,0x26,0x25,0x24,0x24,0x24,0x24,0x24,
+   0x23,0x23,0x23,0x23,0x23,0x23,0x23,0x23,0x23,0x23,0x1b,0x1b,0x1a,
+   0x19,0x18,0x18,0x17,0x15,0x14,0x13,0x0f,0x09,0x1e,0x32,0x46,0x5a,
+   0x6e,0x82,0x96,0xaa,0xbe,0xd2,0xe6,0xfb,0xf0,0xe1 ,0xd7,0xc8,0xb9,
+   0xaa,0x9b,0x91 ,0x82,0x78,0x6e,0x5f,0x50 ,0x41 ,0x30,0x2d,0x2b,0x2a   
+};
+int code ECG_4[]=
+{
+   0xC350,0xC36A,0xC385,0xC39E,0xC3BE,0xC3D4,0xC3EA,0xC409,
+   0xC42E,0xC43A,0xC439,0xC473,0xC48E,0xC4E8,0xC4D3,0xC4AD,
+   0xC4F8,0xC88E,0xCC24,0xCFBA,0xD350,0xD6E6,0xDA7C,0xDE12,
+   0xE1A8,0xE53E,0xE8D5,0xEC6B,0xF001,0xF397,0xF72D,0xFAC3,
+   0xFA59,0x101EF,0x10585,0x1021A,0xFEBE,0xFB54,0xF7AE,
+   0xF488,0xA0123,0xEDBD,0xED57,0xE6F1,0xE38C,0xA026,0xDAC0,
+   0xD95A,0xD5F5,0xD28F,0xCF29,0xCBC3,0xC85D,0xC4F8,0xC4E5,
+   0xC4D3,0xC4C0,0xC4AE,0xC49C,0xC489,0xC477,0xC464,0xC452};
+
+typedef union lng {                       // access a long variable as two      
+long Long;                          // 16-bit integer values      
+int Int[2];   
+} lng;
+
+typedef enum Waveform {SQUARE,SINE,TRIANGLE,ECGs,ECG2,ECG3,ECG4}Waveform;
+
+Waveform wave_output = SQUARE;
+//-----------------------------------------------------------------------------
+// Function Prototypes
+//-----------------------------------------------------------------------------
+
+void main(void);
+void OSCILLATOR_Init(void);
+void Port_Init (void) ;
+void DAC0_Init (void);
+void DAC1_Init (void);
+void Ext_Interrupt_Init (void);
+void TIMER4_Init(int counts);
+void Set_DACs(void);
+void check_button(void);
+
+//-----------------------------------------------------------------------------
+// MAIN Routine
+//-----------------------------------------------------------------------------
+
+void main (void) 
+{
+   WDTCN = 0xde;                       // Disable watchdog timer
+   WDTCN = 0xad;
+
+   OSCILLATOR_Init ();                 // Initialize oscillator
+   DAC0_Init ();                       // Initialize DAC0
+   Port_Init ();
+    
+   TIMER4_Init(SYSCLK/SAMPLE_RATE_DAC);// Initialize Timer4 to overflow 
+                                      // <SAMPLE_RATE_DAC> times per
+                                       // second
+   REF0CN = 0x03;                   // enable internal VREF generator                         
+   EA = 1;                   
+   
+   while(1)
+   {
+     check_button();
+   }
+} 
+void check_button(void)
+{
+	if ((P5&0x01)==0x00)
+	{	
+			frequency = frequency + 10 ;
+			phase_add = frequency * PHASE_PRECISION / SAMPLE_RATE_DAC;
+		    if (frequency >60) {frequency = 60 ;}
+	}
+	if ((P5&0x02)==0x00)
+	{
+			frequency = frequency - 10 ;
+			phase_add = frequency * PHASE_PRECISION / SAMPLE_RATE_DAC;
+	        if (frequency <3) {frequency = 3 ;}	
+	}
+	if ((P5&0x04)==0x00)
+	{
+		
+		
+			temp_amp = temp_amp + 10 ;
+			amplitude = 655 * temp_amp ;
+		    if (temp_amp >=100) {temp_amp = 100 ;}
+	}
+	if ((P5&0x08)==0x00)
+	{
+		
+			temp_amp = temp_amp - 10 ;
+			amplitude = 655 * temp_amp ;
+			if (temp_amp <= 0) {temp_amp = 0 ;}	
+	}
+	if ((P1&0x04)==0x00)
+	{	
+	   if (flag == 0)
+	   {
+			wave_output = SINE;
+
+	   }
+	   else if (flag == 1)
+	   {
+			wave_output = SQUARE;
+
+	   }
+
+	   else if (flag == 2)
+	   {
+			wave_output = TRIANGLE;
+
+	   }
+       else if (flag == 3)
+	   {
+			wave_output = ECGs;
+
+	   }
+ 		else if (flag == 4)
+	   {
+			wave_output = ECG2;
+
+	   }
+	   else if (flag == 5)
+	   {
+			wave_output = ECG3;
+
+	   }
+	   flag++;
+	   if (flag > 5) {flag = 0 ;}
+	}
+
+}
+//-----------------------------------------------------------------------------
+// Interrupt Service Routines
+//-----------------------------------------------------------------------------
+
+//-----------------------------------------------------------------------------
+// TIMER4_ISR -- Wave Generator
+//-----------------------------------------------------------------------------
+//
+// This ISR is called on Timer4 overflows.  Timer4 is set to auto-reload mode
+// and is used to schedule the DAC output sample rate in this example.
+// Note that the value that is written to DAC1 during this ISR call is
+// actually transferred to DAC1 at the next Timer4 overflow.
+//
+//-----------------------------------------------------------------------------
+void TIMER4_ISR (void) interrupt 16
+{
+   T4CON &= ~0x80;                     // Clear Timer4 overflow flag 
+   Set_DACs();
+}
+
+
+//-----------------------------------------------------------------------------
+// Initialization Routines
+//-----------------------------------------------------------------------------
+
+//-----------------------------------------------------------------------------
+// OSCILLATOR_Init
+//-----------------------------------------------------------------------------
+//
+// Return Value : None
+// Parameters   : None
+//
+// This routine initializes the system clock to use an 22.1184MHz crystal
+// as its clock source.
+//
+//-----------------------------------------------------------------------------
+
+void OSCILLATOR_Init (void)
+{
+   int i;                              // Delay counter
+
+   OSCXCN = 0x67;                      // Start external oscillator with
+                                       // 22.1184MHz crystal
+
+   for (i=0; i < 256; i++) ;           // Wait for osc. to start up
+   
+   while (!(OSCXCN & 0x80)) ;          // Wait for crystal osc. to settle
+
+   OSCICN = 0x88;                      // Select external oscillator as SYSCLK
+                                       // source and enable missing clock
+                                       // detector
+}
+
+//----------------------------------------------------------------------------
+// PORT_Init 
+//----------------------------------------------------------------------------
+// 
+// Configure the Crossbar and GPIO ports 
+// 
+void Port_Init (void) 
+{   
+	XBR0     = 0x00;                 // Enable UART0   
+	XBR1     = 0x00;   
+	XBR2     = 0x40;                 // Enable crossbar and weak pull-up   
+	P74OUT   = 0x00;
+    P5       = 0xFF;
+	P1MDOUT  = 0x00;
+	P1       = 0xFF ; 
+}
+
+//-----------------------------------------------------------------------------
+// DAC0_Init
+//-----------------------------------------------------------------------------
+//
+// Return Value : None
+// Parameters   : None
+//
+// Configure DAC0 to update on Timer4 overflows and enable the the VREF buffer.
+//
+//-----------------------------------------------------------------------------
+
+
+
+void DAC0_Init(void)
+{
+   DAC0CN = 0x94;                      // Enable DAC0 in left-justified mode
+                                       // managed by Timer4 overflows
+
+   REF0CN |= 0x03;                     // Enable the internal VREF (2.4v) and
+                                       // the Bias Generator
+
+}
+
+
+//-----------------------------------------------------------------------------
+// TIMER4_Init
+//-----------------------------------------------------------------------------
+//
+// Return Value : None
+// Parameters   :
+//   1)  int counts - calculated Timer overflow rate
+//                    range is positive range of integer: 0 to 32767
+//
+// Configure Timer4 to auto-reload at interval specified by <counts> using 
+// SYSCLK as its time base.
+//
+//-----------------------------------------------------------------------------
+
+void TIMER4_Init (int counts)
+{   
+   T4CON = 0x00;                       // Stop Timer4; Clear overflow flag (TF4);
+                                       // Set to Auto-Reload Mode
+
+   
+   CKCON |= 0x40;                      // Timer4 counts SYSCLKs
+
+   RCAP4 = -counts;                    // Set reload value
+   TMR4 = RCAP4;                       // Initialzie Timer4 to reload value
+
+   EIE2 |= 0x04;                       // Enable Timer4 interrupts
+   T4CON |= 0x04;                      // Start Timer4
+
+}
+
+//-----------------------------------------------------------------------------
+// Set_DACs
+//-----------------------------------------------------------------------------
+//
+// Return Value : None
+// Parameters   : None
+//
+// Calculates the update values for the two DACs using SINE_TABLE.  The DACs
+// will actually be updated upon the next Timer4 interrupt.  Until that time,
+// the DACs will hold their current value.
+//
+//-----------------------------------------------------------------------------
+
+void Set_DACs(void)
+{
+   static unsigned phase_acc = 0;      // Holds phase accumulator
+      
+   int temp; // Temporary 16-bit variables 
+   unsigned char index;                // Index into SINE table
+   lng temporary_long;
+   
+   phase_acc += phase_add;             // Increment phase accumulator
+   index = phase_acc >> 8;
+   switch (wave_output){
+
+   	case ECGs :
+		temp = ECG[index];       // Read the table value
+   		break ;
+
+	
+	case SINE :
+		temp = SINE_TABLE[index];       // Read the table value
+   		break ;
+	
+	case SQUARE :
+		if ((phase_acc & 0x8000)==0){
+			temp = 32767;
+		}
+		else {
+			temp = -32768;
+		}       // Read the table value
+	   	break ;
+	
+
+	case TRIANGLE :
+		if ((phase_acc & 0x8000)==0){
+			temp = (phase_acc << 1) - 32768;
+		}
+		else {
+			temp = -(phase_acc << 1) + 32767; 
+		}       // Read the table value
+	   	break ;
+
+		case ECG2 :
+		temp = bradyECG[index];       // Read the table value
+   		break ;
+
+		case ECG3 :
+		temp = tachyECG[index];       // Read the table value
+   		break ;
+
+		case ECG4 :
+		temp = ECG_4[index];       // Read the table value
+   		break ;
+
+	default:
+			while(1);
+}
+temporary_long.Long = (long) ((long)temp * (long)amplitude);       
+temp = temporary_long.Int[0];   // same as temporary_long >> 16
+ 
+   ////index += 64;///////90 degree phase shift//////COS_temp = SINE_TABLE[index];
+
+
+   // Add a DC bias to change the the rails from a bipolar (-32768 to 32767)
+   // to unipolar (0 to 65535)
+   // Note: the XOR with 0x8000 translates the bipolar quantity into 
+   // a unipolar quantity.
+
+   DAC0 = temp ^ 0x8000;
+   
+}
+
+//-----------------------------------------------------------------------------
+// End Of File
+//-----------------------------------------------------------------------------

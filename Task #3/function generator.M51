@@ -1,0 +1,354 @@
+BL51 BANKED LINKER/LOCATER V6.22              04/18/2018  19:56:53  PAGE 1
+
+
+BL51 BANKED LINKER/LOCATER V6.22, INVOKED BY:
+C:\KEIL\C51\BIN\BL51.EXE D:\Task_2\Function generator\DAC.obj TO D:\Task_2\Fun
+>> ction generator\function generator RS (256) PL (68) PW (78)
+
+
+MEMORY MODEL: SMALL
+
+
+INPUT MODULES INCLUDED:
+  D:\Task_2\Function generator\DAC.obj (DAC)
+  C:\KEIL\C51\LIB\C51S.LIB (?C_STARTUP)
+  C:\KEIL\C51\LIB\C51S.LIB (?C?IMUL)
+  C:\KEIL\C51\LIB\C51S.LIB (?C?LMUL)
+  C:\KEIL\C51\LIB\C51S.LIB (?C?SLDIV)
+  C:\KEIL\C51\LIB\C51S.LIB (?C_INIT)
+  C:\KEIL\C51\LIB\C51S.LIB (?C?ULDIV)
+
+
+LINK MAP OF MODULE:  D:\Task_2\Function generator\function generator (DAC)
+
+
+            TYPE    BASE      LENGTH    RELOCATION   SEGMENT NAME
+            -----------------------------------------------------
+
+            * * * * * * *   D A T A   M E M O R Y   * * * * * * *
+            REG     0000H     0008H     ABSOLUTE     "REG BANK 0"
+            DATA    0008H     000DH     UNIT         ?DT?DAC
+            DATA    0015H     0006H     UNIT         _DATA_GROUP_
+            IDATA   001BH     0001H     UNIT         ?STACK
+
+            * * * * * * *   C O D E   M E M O R Y   * * * * * * *
+            CODE    0000H     0003H     ABSOLUTE     
+                    0003H     0080H                  *** GAP ***
+            CODE    0083H     0003H     ABSOLUTE     
+                    0086H     077AH                  *** GAP ***
+            CODE    0800H     04C2H     UNIT         ?CO?DAC
+            CODE    0CC2H     0150H     UNIT         ?PR?CHECK_BUTTON?DAC
+            CODE    0E12H     012FH     UNIT         ?C?LIB_CODE
+            CODE    0F41H     00F4H     UNIT         ?PR?SET_DACS?DAC
+            CODE    1035H     008CH     UNIT         ?C_C51STARTUP
+            CODE    10C1H     0044H     UNIT         ?C?LDIV
+            CODE    1105H     003EH     UNIT         ?PR?TIMER4_ISR?DAC
+            CODE    1143H     0020H     UNIT         ?PR?MAIN?DAC
+            CODE    1163H     001CH     UNIT         ?PR?OSCILLATOR_INIT?DAC
+            CODE    117FH     001CH     UNIT         ?PR?_TIMER4_INIT?DAC
+            CODE    119BH     001CH     UNIT         ?C_INITSEG
+            CODE    11B7H     0013H     UNIT         ?PR?PORT_INIT?DAC
+            CODE    11CAH     0007H     UNIT         ?PR?DAC0_INIT?DAC
+
+
+
+OVERLAY MAP OF MODULE:   D:\Task_2\Function generator\function generator (DAC)
+>> 
+
+
+SEGMENT                           DATA_GROUP 
+  +--> CALLED SEGMENT           START    LENGTH
+-----------------------------------------------
+?PR?TIMER4_ISR?DAC              -----    -----
+  +--> ?PR?SET_DACS?DAC
+
+?PR?SET_DACS?DAC                0015H    0006H
+  +--> ?CO?DAC
+
+*** NEW ROOT ***************************************************
+
+BL51 BANKED LINKER/LOCATER V6.22            04/18/2018  19:56:53  PAGE 2
+
+
+?C_C51STARTUP                   -----    -----
+  +--> ?PR?MAIN?DAC
+  +--> ?C_INITSEG
+
+?PR?MAIN?DAC                    -----    -----
+  +--> ?PR?OSCILLATOR_INIT?DAC
+  +--> ?PR?DAC0_INIT?DAC
+  +--> ?PR?PORT_INIT?DAC
+  +--> ?PR?_TIMER4_INIT?DAC
+  +--> ?PR?CHECK_BUTTON?DAC
+
+
+
+SYMBOL TABLE OF MODULE:  D:\Task_2\Function generator\function generator (DAC)
+>> 
+
+  VALUE           TYPE          NAME
+  ----------------------------------
+
+  -------         MODULE        DAC
+  C:0000H         SYMBOL        _ICE_DUMMY_
+  D:0090H         PUBLIC        P1
+  C:0CC2H         PUBLIC        check_button
+  D:00FFH         PUBLIC        WDTCN
+  D:0085H         PUBLIC        P5
+  B:00A8H.7       PUBLIC        EA
+  D:00E7H         PUBLIC        EIE2
+  C:1105H         PUBLIC        TIMER4_ISR
+  D:00E8H         PUBLIC        ADC0CN
+  D:00D4H         PUBLIC        DAC0CN
+  D:00A5H         PUBLIC        P1MDOUT
+  D:00A8H         PUBLIC        IE
+  D:00D8H         PUBLIC        PCA0CN
+  D:00B8H         PUBLIC        IP
+  D:000AH         PUBLIC        flag
+  D:00E1H         PUBLIC        XBR0
+  C:11B7H         PUBLIC        Port_Init
+  D:00E2H         PUBLIC        XBR1
+  D:000CH         PUBLIC        phase_add
+  D:00E3H         PUBLIC        XBR2
+  D:00D1H         PUBLIC        REF0CN
+  D:00C0H         PUBLIC        SMB0CN
+  C:1143H         PUBLIC        main
+  D:00F4H         PUBLIC        TMR4
+  C:117FH         PUBLIC        _TIMER4_Init
+  D:00F8H         PUBLIC        SPI0CN
+  D:00B5H         PUBLIC        P74OUT
+  D:0088H         PUBLIC        TCON
+  D:00B2H         PUBLIC        OSCICN
+  C:0F41H         PUBLIC        Set_DACs
+  D:000EH         PUBLIC        wave_output
+  D:000FH         PUBLIC        amplitude
+  C:0A00H         PUBLIC        ECG
+  D:00B1H         PUBLIC        OSCXCN
+  D:0011H         PUBLIC        temp_amp
+  D:0013H         PUBLIC        frequency
+  D:00E4H         PUBLIC        RCAP4
+  C:0C44H         PUBLIC        ECG_4
+  D:0098H         PUBLIC        SCON0
+  C:0ADAH         PUBLIC        bradyECG
+  D:00C8H         PUBLIC        T2CON
+  D:00C9H         PUBLIC        T4CON
+  C:0B78H         PUBLIC        tachyECG
+  C:11CAH         PUBLIC        DAC0_Init
+  D:008EH         PUBLIC        CKCON
+BL51 BANKED LINKER/LOCATER V6.22            04/18/2018  19:56:53  PAGE 3
+
+
+  C:1163H         PUBLIC        OSCILLATOR_Init
+  D:00D2H         PUBLIC        DAC0
+  C:0800H         PUBLIC        SINE_TABLE
+  D:00D0H         PUBLIC        PSW
+  -------         PROC          MAIN
+  C:1143H         LINE#         191
+  C:1143H         LINE#         192
+  C:1143H         LINE#         193
+  C:1146H         LINE#         194
+  C:1149H         LINE#         196
+  C:114CH         LINE#         197
+  C:114FH         LINE#         198
+  C:1152H         LINE#         200
+  C:1159H         LINE#         203
+  C:115CH         LINE#         204
+  C:115EH         LINE#         206
+  C:115EH         LINE#         207
+  C:115EH         LINE#         208
+  C:1161H         LINE#         209
+  -------         ENDPROC       MAIN
+  -------         PROC          CHECK_BUTTON
+  C:0CC2H         LINE#         211
+  C:0CC2H         LINE#         212
+  C:0CC2H         LINE#         213
+  C:0CC7H         LINE#         214
+  C:0CC7H         LINE#         215
+  C:0CD2H         LINE#         216
+  C:0CF2H         LINE#         217
+  C:0D05H         LINE#         218
+  C:0D05H         LINE#         219
+  C:0D0AH         LINE#         220
+  C:0D0AH         LINE#         221
+  C:0D16H         LINE#         222
+  C:0D36H         LINE#         223
+  C:0D49H         LINE#         224
+  C:0D49H         LINE#         225
+  C:0D4EH         LINE#         226
+  C:0D4EH         LINE#         229
+  C:0D59H         LINE#         230
+  C:0D67H         LINE#         231
+  C:0D7AH         LINE#         232
+  C:0D7AH         LINE#         233
+  C:0D7FH         LINE#         234
+  C:0D7FH         LINE#         236
+  C:0D8BH         LINE#         237
+  C:0D99H         LINE#         238
+  C:0DABH         LINE#         239
+  C:0DABH         LINE#         240
+  C:0DB0H         LINE#         241
+  C:0DB0H         LINE#         242
+  C:0DB6H         LINE#         243
+  C:0DB6H         LINE#         244
+  C:0DB8H         LINE#         246
+  C:0DBAH         LINE#         247
+  C:0DC2H         LINE#         248
+  C:0DC2H         LINE#         249
+  C:0DC5H         LINE#         251
+  C:0DC7H         LINE#         253
+  C:0DCFH         LINE#         254
+  C:0DCFH         LINE#         255
+  C:0DD2H         LINE#         257
+  C:0DD4H         LINE#         258
+  C:0DDCH         LINE#         259
+  C:0DDCH         LINE#         260
+  C:0DDFH         LINE#         262
+BL51 BANKED LINKER/LOCATER V6.22            04/18/2018  19:56:53  PAGE 4
+
+
+  C:0DE1H         LINE#         263
+  C:0DE9H         LINE#         264
+  C:0DE9H         LINE#         265
+  C:0DECH         LINE#         267
+  C:0DEEH         LINE#         268
+  C:0DF6H         LINE#         269
+  C:0DF6H         LINE#         270
+  C:0DF9H         LINE#         272
+  C:0DF9H         LINE#         273
+  C:0E01H         LINE#         274
+  C:0E11H         LINE#         275
+  C:0E11H         LINE#         277
+  -------         ENDPROC       CHECK_BUTTON
+  -------         PROC          TIMER4_ISR
+  C:1105H         LINE#         292
+  C:1122H         LINE#         294
+  C:1125H         LINE#         295
+  C:1128H         LINE#         296
+  -------         ENDPROC       TIMER4_ISR
+  -------         PROC          OSCILLATOR_INIT
+  -------         DO            
+  D:0006H         SYMBOL        i
+  -------         ENDDO         
+  C:1163H         LINE#         315
+  C:1163H         LINE#         316
+  C:1163H         LINE#         319
+  C:1166H         LINE#         322
+  C:1176H         LINE#         324
+  C:117BH         LINE#         326
+  C:117EH         LINE#         329
+  -------         ENDPROC       OSCILLATOR_INIT
+  -------         PROC          PORT_INIT
+  C:11B7H         LINE#         337
+  C:11B7H         LINE#         338
+  C:11B7H         LINE#         339
+  C:11BAH         LINE#         340
+  C:11BCH         LINE#         341
+  C:11BFH         LINE#         342
+  C:11C1H         LINE#         343
+  C:11C4H         LINE#         344
+  C:11C6H         LINE#         345
+  C:11C9H         LINE#         346
+  -------         ENDPROC       PORT_INIT
+  -------         PROC          DAC0_INIT
+  C:11CAH         LINE#         361
+  C:11CAH         LINE#         362
+  C:11CAH         LINE#         363
+  C:11CDH         LINE#         366
+  C:11D0H         LINE#         369
+  -------         ENDPROC       DAC0_INIT
+  -------         PROC          _TIMER4_INIT
+  D:0006H         SYMBOL        counts
+  C:117FH         LINE#         386
+  C:117FH         LINE#         387
+  C:117FH         LINE#         388
+  C:1182H         LINE#         392
+  C:1185H         LINE#         394
+  C:118EH         LINE#         395
+  C:1194H         LINE#         397
+  C:1197H         LINE#         398
+  C:119AH         LINE#         400
+  -------         ENDPROC       _TIMER4_INIT
+  -------         PROC          SET_DACS
+  -------         DO            
+  D:0008H         SYMBOL        phase_acc
+BL51 BANKED LINKER/LOCATER V6.22            04/18/2018  19:56:53  PAGE 5
+
+
+  D:0015H         SYMBOL        temp
+  D:0007H         SYMBOL        index
+  D:0017H         SYMBOL        temporary_long
+  -------         ENDDO         
+  C:0F41H         LINE#         415
+  C:0F41H         LINE#         416
+  C:0F41H         LINE#         423
+  C:0F4DH         LINE#         424
+  C:0F4EH         LINE#         425
+  C:0F74H         LINE#         427
+  C:0F74H         LINE#         428
+  C:0F7EH         LINE#         429
+  C:0F80H         LINE#         432
+  C:0F80H         LINE#         433
+  C:0F8DH         LINE#         434
+  C:0F8FH         LINE#         436
+  C:0F8FH         LINE#         437
+  C:0F94H         LINE#         438
+  C:0F9AH         LINE#         439
+  C:0F9CH         LINE#         440
+  C:0F9CH         LINE#         441
+  C:0FA2H         LINE#         442
+  C:0FA2H         LINE#         443
+  C:0FA4H         LINE#         446
+  C:0FA4H         LINE#         447
+  C:0FA9H         LINE#         448
+  C:0FBBH         LINE#         449
+  C:0FBDH         LINE#         450
+  C:0FBDH         LINE#         451
+  C:0FD1H         LINE#         452
+  C:0FD1H         LINE#         453
+  C:0FD3H         LINE#         455
+  C:0FD3H         LINE#         456
+  C:0FDDH         LINE#         457
+  C:0FDFH         LINE#         459
+  C:0FDFH         LINE#         460
+  C:0FE9H         LINE#         461
+  C:0FEBH         LINE#         463
+  C:0FEBH         LINE#         464
+  C:1000H         LINE#         465
+  C:1002H         LINE#         467
+  C:1002H         LINE#         468
+  C:1004H         LINE#         469
+  C:1004H         LINE#         470
+  C:1024H         LINE#         471
+  C:102AH         LINE#         481
+  C:1034H         LINE#         483
+  -------         ENDPROC       SET_DACS
+  -------         ENDMOD        DAC
+
+  -------         MODULE        ?C?IMUL
+  C:0E12H         PUBLIC        ?C?IMUL
+  -------         ENDMOD        ?C?IMUL
+
+  -------         MODULE        ?C?LMUL
+  C:0E24H         PUBLIC        ?C?LMUL
+  -------         ENDMOD        ?C?LMUL
+
+  -------         MODULE        ?C?SLDIV
+  C:10C1H         PUBLIC        ?C?SLDIV
+  -------         ENDMOD        ?C?SLDIV
+
+  -------         MODULE        ?C?ULDIV
+  C:0EAFH         PUBLIC        ?C?ULDIV
+  -------         ENDMOD        ?C?ULDIV
+BL51 BANKED LINKER/LOCATER V6.22            04/18/2018  19:56:53  PAGE 6
+
+
+
+******************************************************************************
+>> 
+* RESTRICTED VERSION WITH 0800H BYTE CODE SIZE LIMIT; USED: 07D4H BYTE (97%) *
+>> 
+******************************************************************************
+>> 
+
+Program Size: data=28.0 xdata=0 code=2519
+LINK/LOCATE RUN COMPLETE.  0 WARNING(S),  0 ERROR(S)
